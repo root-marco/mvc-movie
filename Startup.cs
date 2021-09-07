@@ -3,21 +3,38 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.EntityFrameworkCore;
 
 namespace MvcMovie
 {
   public class Startup
   {
-    public Startup(IConfiguration configuration)
+    public Startup(IConfiguration configuration, IWebHostEnvironment environment)
     {
-      Configuration = configuration;
+      this.Environment = environment;
+      this.Configuration = configuration;
     }
 
     public IConfiguration Configuration { get; }
+    public IWebHostEnvironment Environment { get; }
 
     public void ConfigureServices(IServiceCollection services)
     {
       services.AddControllersWithViews();
+
+      services.AddDbContext<MvcMovieContext>(options =>
+      {
+        var connectionString = Configuration.GetConnectionString("MvcMovieContext");
+
+        if (Environment.IsDevelopment())
+        {
+          options.UseSqlite(connectionString); 
+        }
+        else
+        {
+          options.UseSqlServer(connectionString);
+        }
+      });
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -34,9 +51,7 @@ namespace MvcMovie
 
       app.UseHttpsRedirection();
       app.UseStaticFiles();
-
       app.UseRouting();
-
       app.UseAuthorization();
 
       app.UseEndpoints(endpoints =>
